@@ -63,6 +63,8 @@
 # - Error handeling, custom Window Lables, Messages and FV2 Icon
 # -Updated by David Raabe on July 26, 2018
 # - Added Custom Branding to pop up windows
+# -Updated by Tomos Tyler on Aug 19 2020
+# - Altered Display dialog to use LaunchD as end user fix for Mojave and above
 ####################################################################################################
 #
 # Parameter 4 = Set organization name in pop up window
