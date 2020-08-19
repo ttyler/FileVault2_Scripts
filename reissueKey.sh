@@ -105,6 +105,8 @@ userName=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCop
 
 ## Grab the UUID of the User
 userNameUUID=$(dscl . -read /Users/$userName/ GeneratedUID | awk '{print $2}')
+currentUID=$(dscl . read /Users/$userName UniqueID | awk '{print $2}')
+
 
 ## Get the OS version
 OS=`/usr/bin/sw_vers -productVersion | awk -F. {'print $2'}`
@@ -138,12 +140,11 @@ fi
 passwordPrompt () {
 ## Get the logged in user's password via a prompt
 echo "Prompting ${userName} for their login password."
-userPass=$(launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
-on run
+userPass=$(launchctl "asuser" "$currentUID" /usr/bin/osascript -e "
 display dialog \"To generate a new FileVault key\" & return & \"Enter login password for '$userName'\" default answer \"\" with title \"$orgName FileVault Key Reset\" buttons {\"Cancel\", \"Ok\"} default button 2 with icon POSIX file \"$brandIcon\" with text and hidden answer
 set userPass to text returned of the result
 return userPass
-end run")
+")
 if [ "$?" == "1" ]
 then
 echo "User Canceled"
@@ -182,31 +183,27 @@ fi
 }
 
 successAlert () {
-launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
-on run
+launchctl "asuser" "$currentUID" /usr/bin/osascript -e "
 display dialog \"\" & return & \"Your FileVault Key was successfully Changed\" with title \"$orgName FileVault Key Reset\" buttons {\"Close\"} default button 1 with icon POSIX file \"$brandIcon\"
-end run"
+"
 }
 
 errorAlert () {
-launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
-on run
+launchctl "asuser" "$currentUID" /usr/bin/osascript -e "
 display dialog \"FileVault Key not Changed\" & return & \"$result\" buttons {\"Cancel\", \"Try Again\"} default button 2 with title \"$orgName FileVault Key Reset\" with icon POSIX file \"$brandIcon\"
-end run"
- if [ "$?" == "1" ]
+"
+if [ "$?" == "1" ]
 	then
-echo "User Canceled"
-exit 0
+	echo "User Canceled"
+	exit 0
 else
 try=$(($try+1))
 fi
 }
 
 haltAlert () {
-launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
-on run
+launchctl "asuser" "$currentUID" /usr/bin/osascript -e "
 display dialog \"FileVault Key not changed\" & return & \"$haltMsg\" buttons {\"Close\"} default button 1 with title \"$orgName FileVault Key Reset\" with icon POSIX file \"$brandIcon\"
-end run
 "
 }
 
