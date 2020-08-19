@@ -90,16 +90,16 @@ fi
 if [[ ! -z "$7" ]]; then
 brandIcon="$7"
 elif [[ -f $selfServiceBrandIcon ]]; then
-  brandIcon=$selfServiceBrandIcon
+	brandIcon=$selfServiceBrandIcon
 elif [[ -f $jamfBrandIcon ]]; then
-  brandIcon=$jamfBrandIcon
+	brandIcon=$jamfBrandIcon
 else
 brandIcon=$fileVaultIcon
 fi
 
 
 ## Get the logged in user's name
-userName=$(/usr/bin/stat -f%Su /dev/console)
+userName=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
 
 ## Grab the UUID of the User
 userNameUUID=$(dscl . -read /Users/$userName/ GeneratedUID | awk '{print $2}')
@@ -136,7 +136,7 @@ fi
 passwordPrompt () {
 ## Get the logged in user's password via a prompt
 echo "Prompting ${userName} for their login password."
-userPass=$(/usr/bin/osascript -e "
+userPass=$(launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
 on run
 display dialog \"To generate a new FileVault key\" & return & \"Enter login password for '$userName'\" default answer \"\" with title \"$orgName FileVault Key Reset\" buttons {\"Cancel\", \"Ok\"} default button 2 with icon POSIX file \"$brandIcon\" with text and hidden answer
 set userPass to text returned of the result
@@ -180,19 +180,19 @@ fi
 }
 
 successAlert () {
-/usr/bin/osascript -e "
+launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
 on run
 display dialog \"\" & return & \"Your FileVault Key was successfully Changed\" with title \"$orgName FileVault Key Reset\" buttons {\"Close\"} default button 1 with icon POSIX file \"$brandIcon\"
 end run"
 }
 
 errorAlert () {
- /usr/bin/osascript -e "
+launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
 on run
 display dialog \"FileVault Key not Changed\" & return & \"$result\" buttons {\"Cancel\", \"Try Again\"} default button 2 with title \"$orgName FileVault Key Reset\" with icon POSIX file \"$brandIcon\"
 end run"
  if [ "$?" == "1" ]
-  then
+	then
 echo "User Canceled"
 exit 0
 else
@@ -201,7 +201,7 @@ fi
 }
 
 haltAlert () {
-/usr/bin/osascript -e "
+launchctl "asuser" "$userNameUUID" /usr/bin/osascript -e "
 on run
 display dialog \"FileVault Key not changed\" & return & \"$haltMsg\" buttons {\"Close\"} default button 1 with title \"$orgName FileVault Key Reset\" with icon POSIX file \"$brandIcon\"
 end run
